@@ -9,5 +9,3 @@ def generate_random_distribution(number_random_variables: int) -> list[float]:
     distribution[i] = random.randint(1, 100)
   normalized = [float(i)/sum(distribution) for i in distribution]
   return Distribution(values=normalized, number_variables=number_random_variables)
-
-print(generate_random_distribution(3))

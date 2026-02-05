@@ -6,4 +6,4 @@ def generate_random_distribution(number_random_variables: int) -> list[float]:
   for i in range(2 ** number_random_variables):
     distribution[i] = random.randint(1, 100)
   normalized = [float(i)/sum(distribution) for i in distribution]
-  return normalized
+  return normalized, number_random_variables

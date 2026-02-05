@@ -14,4 +14,4 @@ def load_data(file) -> list[float]:
       value = float(row[1])         
       process_distribution[index] = value
   assert int(sum(process_distribution)) == 1 
-  return process_distribution
+  return process_distribution, size

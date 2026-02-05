@@ -1,5 +1,5 @@
 import random
-import pprint
+from distribution import Distribution
 
 def generate_random_distribution(number_random_variables: int) -> list[float]:
   if number_random_variables <= 0:
@@ -8,4 +8,6 @@ def generate_random_distribution(number_random_variables: int) -> list[float]:
   for i in range(2 ** number_random_variables):
     distribution[i] = random.randint(1, 100)
   normalized = [float(i)/sum(distribution) for i in distribution]
-  return normalized
+  return Distribution(values=normalized, number_variables=number_random_variables)
+
+print(generate_random_distribution(3))

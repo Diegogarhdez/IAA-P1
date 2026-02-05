@@ -12,15 +12,12 @@ def main() -> None:
   maskI = 0
   for i in range(number_varaibles_interest):
     variable = int(input(f"Variable de interés número {i + 1}"))
-    maskI |= variable
   number_varaibles_cond = int(input("Número de variables condicionadas: "))
   maskC = 0
   valC = 0
   for i in range(number_varaibles_cond):
     variable = int(input(f"Variable condicionada número {i + 1}: "))
-    maskC |= variable
     value = int(input(f"Valor de la variable {i + 1}: "))
-    valC |= value
 
 if __name__ == "__main__":
   main()

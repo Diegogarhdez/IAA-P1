@@ -1,17 +1,18 @@
 import csv
+from distribution import Distribution
 
-def load_data(fichero):
-  with open(fichero, newline="", encoding="utf-8") as f:
+def load_data(file):
+  with open(file, newline="", encoding="utf-8") as f:
     reader = csv.reader(f)
-    distribucion = []
+    distribution = []
     for i in reader:
-      distribucion.append(i)
-    if not distribucion:
+      distribution.append(i)
+    if not distribution:
       raise RuntimeError("empty input file")
-    tamaño_entrada = len(distribucion[0][0])
-    distribucion_procesada = [0.0] * (2 ** tamaño_entrada)
-    for fila in distribucion:
-      indice = int(fila[0], 2)       
-      valor = float(fila[1])         
-      distribucion_procesada[indice] = valor
-  return distribucion_procesada
+    size = len(distribution[0][0])
+    process_distribution = [0.0] * (2 ** size)
+    for row in distribution:
+      index = int(row[0], 2)       
+      value = float(row[1])         
+      process_distribution[index] = value
+  return Distribution(process_distribution, size)

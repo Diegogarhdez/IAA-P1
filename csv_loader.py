@@ -1,7 +1,6 @@
 import csv
-from distribution import Distribution
 
-def load_data(file):
+def load_data(file) -> list[float]:
   with open(file, newline="", encoding="utf-8") as f:
     reader = csv.reader(f)
     distribution = []
@@ -14,7 +13,5 @@ def load_data(file):
       index = int(row[0], 2)       
       value = float(row[1])         
       process_distribution[index] = value
-
   assert int(sum(process_distribution)) == 1 
-
-  return Distribution(process_distribution, size)
+  return process_distribution

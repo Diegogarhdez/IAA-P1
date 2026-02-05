@@ -29,3 +29,7 @@ if __name__ == "__main__":
 # Preguntas cuantas variables de interes hay => 1. es ES
 # Preguntas cuantas variables condicionadas hay => 1. es TI
 # Preguntar para cada variable condicionada si su valor es 0 o 1
+# Ejemplo
+# maskI    maskC    valC
+# 00001111 11110000 01100000
+# Recorrer con un for 00000000 hasta 00001111

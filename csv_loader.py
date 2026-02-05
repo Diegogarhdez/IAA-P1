@@ -7,12 +7,14 @@ def load_data(file):
     distribution = []
     for i in reader:
       distribution.append(i)
-    if not distribution:
-      raise RuntimeError("empty input file")
+    assert distribution
     size = len(distribution[0][0])
     process_distribution = [0.0] * (2 ** size)
     for row in distribution:
       index = int(row[0], 2)       
       value = float(row[1])         
       process_distribution[index] = value
+
+  assert int(sum(process_distribution)) == 1 
+
   return Distribution(process_distribution, size)

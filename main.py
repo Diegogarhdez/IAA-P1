@@ -75,9 +75,64 @@ def get_variables_cond(
 
 
 def print_distribution(distribution: list[float], number_variables: int) -> None:
+    # Create the header: Xi, Xi-1, ..., X1
+    variable_headers = [f"X{number_variables - idx}" for idx in range(number_variables)]
+    header = " ".join(variable_headers) + "    P"
+    print(header)
     for i in range(len(distribution)):
-        print(f"{i:0{number_variables}b}: {distribution[i]:.4f}")
+        bits = f"{i:0{number_variables}b}"
+        padded_bits = " ".join(bits)
+        print(f"{padded_bits}    {distribution[i]:.4f}")
     print(f"Suma de probabilidades: {sum(distribution)}")
+
+
+def count_1_bits(mask: int) -> int:
+    return bin(mask).count("1")
+
+
+def _mask_to_index(k: int, maskI: int, number_variables: int) -> int:
+    """
+    Dada una configuración completa k, devuelve el índice (0 .. 2^|maskI|-1)
+    que corresponde a la parte de k en las posiciones donde maskI tiene 1.
+
+    Los bits se toman en orden de posición creciente (bit 0, 1, 2, ...) y se
+    escriben en el índice desde el menos significativo: el primer bit de maskI
+    va al bit 0 del índice, el siguiente al bit 1, etc.
+
+    Ejemplo: maskI = 0011 (bits 0 y 1), k = 0101 → extraemos bit 0 de k=1,
+    bit 1 de k=0 → índice = 01 en binario = 1.
+    """
+    index = 0
+    pos = 0
+    for b in range(number_variables):
+        if (maskI >> b) & 1:
+            index |= ((k >> b) & 1) << pos
+            pos += 1
+    return index
+
+
+def prob_cond_bin(
+    distribution: list[float], number_variables: int, maskC: int, valC: int, maskI: int
+) -> list[float] | None:
+    if maskC & maskI:
+        return None
+
+    OUTPUT_SIZE = 2 ** count_1_bits(maskI)
+    out = [0.0] * OUTPUT_SIZE
+
+    for k in range(len(distribution)):
+        if (k & maskC) != valC:
+            continue
+        idx = _mask_to_index(k, maskI, number_variables)
+        out[idx] += distribution[k]
+
+    total = sum(out)
+    if total <= 0.0:
+        return None
+
+    for i in range(OUTPUT_SIZE):
+        out[i] /= total
+    return out
 
 
 def main() -> None:
@@ -96,7 +151,7 @@ def main() -> None:
         distribution, number_variables = generate_random_distribution(number_variables)
     print_distribution(distribution, number_variables)
     number_variables_interest = get_number_variables_interest(number_variables)
-    used_variables = set[int]()
+    used_variables: set[int] = set()
     maskI = get_variables_interest(
         number_variables, number_variables_interest, used_variables
     )
@@ -106,13 +161,34 @@ def main() -> None:
     maskC, valC = get_variables_cond(
         number_variables, number_variables_cond, used_variables
     )
-    maskM = 2**number_variables - 1 ^ maskI ^ maskC
     print(
-        f"maskI: {maskI:0{number_variables}b}, "
+        f"\nmaskI: {maskI:0{number_variables}b}, "
         f"maskC: {maskC:0{number_variables}b}, "
         f"valC: {valC:0{number_variables}b}, "
-        f"maskM: {maskM:0{number_variables}b}"
     )
+
+    result = prob_cond_bin(distribution, number_variables, maskC, valC, maskI)
+    if result is None:
+        print(
+            "\nNo se puede calcular la distribución condicional (P(X_C)=0 o máscaras solapadas)."
+        )
+        return
+
+    print("\n--- Distribución condicional P(X_I | X_C) ---")
+    countI = count_1_bits(maskI)
+    if countI == 0:
+        print("  P(∅ | X_C) = 1.000000")
+    else:
+        bits_I = [b for b in range(number_variables) if (maskI >> b) & 1]
+        variable_headers = [f"X{b + 1}" for b in reversed(bits_I)]
+        header = " ".join(variable_headers) + "    P"
+        print(header)
+        for idx in range(len(result)):
+            bits_str = " ".join(
+                str((idx >> (countI - 1 - j)) & 1) for j in range(countI)
+            )
+            print(f"{bits_str}    {result[idx]:.6f}")
+    print(f"Suma de probabilidades: {sum(result):.6f}")
 
 
 if __name__ == "__main__":

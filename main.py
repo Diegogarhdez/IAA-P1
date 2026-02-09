@@ -1,4 +1,5 @@
 import os
+import time
 
 from csv_loader import load_csv_distribution
 from random_loader import generate_random_distribution
@@ -136,6 +137,21 @@ def prob_cond_bin(
 
 
 def main() -> None:
+    print("\n" + "="*50)
+    print("1. Calcular probabilidades condicionales")
+    print("2. Análisis de tiempo de ejecución (prob_cond_bin)")
+    print("="*50)
+    
+    option = input("Selecciona una opción (1 o 2): ").strip()
+    
+    if option == "2":
+        from timing_analyzer import main_timing_analysis
+        main_timing_analysis()
+        return
+    elif option != "1":
+        print("Opción no válida")
+        return
+    
     name_input_file = input("Nombre del fichero: ")
     if name_input_file:
         while not os.path.exists(name_input_file):
@@ -167,7 +183,12 @@ def main() -> None:
         f"valC: {valC:0{number_variables}b}, "
     )
 
+    # Medir tiempo de ejecución
+    start_time = time.perf_counter()
     result = prob_cond_bin(distribution, number_variables, maskC, valC, maskI)
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+    
     if result is None:
         print(
             "\nNo se puede calcular la distribución condicional (P(X_C)=0 o máscaras solapadas)."
@@ -189,6 +210,7 @@ def main() -> None:
             )
             print(f"{bits_str}    {result[idx]:.6f}")
     print(f"Suma de probabilidades: {sum(result):.6f}")
+    print(f"\n⏱️  Tiempo de ejecución de prob_cond_bin: {elapsed_time*1000:.6f} ms")
 
 
 if __name__ == "__main__":

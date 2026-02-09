@@ -10,18 +10,6 @@ import csv
 from random_loader import generate_random_distribution
 from main import prob_cond_bin, count_1_bits
 
-try:
-    import matplotlib.pyplot as plt
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-
-try:
-    import numpy as np
-    NUMPY_AVAILABLE = True
-except ImportError:
-    NUMPY_AVAILABLE = False
-
 
 def generate_mask(variables: list[int], number_variables: int) -> int:
     """Convierte una lista de índices de variables (1-indexados) a una máscara."""
@@ -133,7 +121,7 @@ def print_results_table(results: dict) -> None:
     
     # === ENCABEZADO ===
     print("\n" + CYAN + "╔" + "═" * (total_width - 2) + "╗" + RESET)
-    title = " ANÁLISIS DE TIEMPO DE EJECUCIÓN - prob_cond_bin "
+    title = " ANÁLISIS DE TIEMPO DE EJECUCIÓN"
     padding = (total_width - len(title)) // 2
     print(CYAN + "║" + RESET + 
           " " * padding + BOLD + title + RESET + 
@@ -141,7 +129,7 @@ def print_results_table(results: dict) -> None:
     print(CYAN + "╠" + "═" * (total_width - 2) + "╣" + RESET)
     
     # === COLUMNAS ===
-    headers = f"{'Config':<12} {'I':<3} {'C':<3} {'O':<3} {'Prom (ms)':<15} {'Mín':<10} {'Máx':<10}"
+    headers = f"{'Config':<12} {'I':<3} {'C':<3} {'O':<3} {'Prom (ms)':<10} {'Mín':<7} {'Máx':<7}"
     print(CYAN + "║" + RESET + f" {BOLD + MAGENTA}{headers}{RESET}" + 
           " " * (total_width - len(headers) - 3) + CYAN + "║" + RESET)
     print(CYAN + "╠" + "═" * (total_width - 2) + "╣" + RESET)
@@ -167,119 +155,20 @@ def print_results_table(results: dict) -> None:
             time_color = MAGENTA
             symbol = "▲"
         
-        row = f"{config:<12} {num_interest:<3} {num_cond:<3} {num_other:<3} {time_color}{avg_time_ms:>13.6f}{RESET}  {min_time_ms:>8.4f}  {max_time_ms:>8.4f} {symbol}"
+        row = f"{config:<12} {num_interest:<3} {num_cond:<3} {num_other:<3} {time_color}{avg_time_ms:>9.4f}{RESET}  {min_time_ms:>6.4f}  {max_time_ms:>6.4f} {symbol}"
         print(CYAN + "║" + RESET + f" {row}" + 
               " " * (total_width - len(row) - 5) + CYAN + "║" + RESET)
     
     # === PIE CON ESTADÍSTICAS ===
     print(CYAN + "╠" + "═" * (total_width - 2) + "╣" + RESET)
     times_ms = [t * 1000 for t in results['avg_time']]
-    stats_line = f"Min: {min(times_ms):.6f} | Max: {max(times_ms):.6f} | Prom: {sum(times_ms)/len(times_ms):.6f} | Total: {len(results['config'])}"
+    stats_line = f"Min: {min(times_ms):.4f} | Max: {max(times_ms):.4f} | Prom: {sum(times_ms)/len(times_ms):.4f} | Total: {len(results['config'])}"
     print(CYAN + "║ " + RESET + f"{GREEN}{BOLD}{stats_line}{RESET}" + 
           " " * (total_width - len(stats_line) - 4) + CYAN + "║" + RESET)
     print(CYAN + "╚" + "═" * (total_width - 2) + "╝" + RESET + "\n")
 
 
-def create_visualizations(results: dict, number_variables: int) -> None:
-    """Crea gráficos para visualizar los resultados."""
-    
-    # === VERIFICAR DEPENDENCIAS ===
-    if not MATPLOTLIB_AVAILABLE:
-        print("\n⚠️  matplotlib no está disponible. Saltando visualización gráfica.")
-        print("Para generar gráficos, instala matplotlib: pip install matplotlib")
-        return
-    
-    if not NUMPY_AVAILABLE:
-        print("\n⚠️  numpy no está disponible. Saltando visualización gráfica.")
-        print("Para generar gráficos, instala numpy: pip install numpy")
-        return
-    
-    # === AGRUPAR DATOS ===
-    by_interest = {}
-    for i in range(len(results['config'])):
-        num_interest = results['num_vars_interest'][i]
-        if num_interest not in by_interest:
-            by_interest[num_interest] = {'cond': [], 'time': []}
-        by_interest[num_interest]['time'].append(results['avg_time'][i] * 1000)
-    
-    by_cond = {}
-    for i in range(len(results['config'])):
-        num_cond = results['num_vars_cond'][i]
-        if num_cond not in by_cond:
-            by_cond[num_cond] = {'interest': [], 'time': []}
-        by_cond[num_cond]['time'].append(results['avg_time'][i] * 1000)
-    
-    # === CREAR FIGURA ===
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle(f'Análisis de Tiempo de Ejecución - {number_variables} Variables Totales', 
-                 fontsize=14, fontweight='bold')
-    
-    # === GRÁFICO 1: Tiempo vs Variables de Interés ===
-    ax = axes[0, 0]
-    num_interest_vals = sorted(by_interest.keys())
-    times_by_interest = [np.mean(by_interest[ni]['time']) for ni in num_interest_vals]
-    ax.plot(num_interest_vals, times_by_interest, 'o-', linewidth=2, markersize=8, color='#2E86AB')
-    ax.set_xlabel('Número de Variables de Interés', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Tiempo Promedio (ms)', fontsize=11, fontweight='bold')
-    ax.set_title('Tiempo vs Variables de Interés', fontsize=12, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_xticks(num_interest_vals)
-    
-    # === GRÁFICO 2: Tiempo vs Variables Condicionadas ===
-    ax = axes[0, 1]
-    num_cond_vals = sorted(by_cond.keys())
-    times_by_cond = [np.mean(by_cond[nc]['time']) for nc in num_cond_vals]
-    ax.plot(num_cond_vals, times_by_cond, 's-', linewidth=2, markersize=8, color='#A23B72')
-    ax.set_xlabel('Número de Variables Condicionadas', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Tiempo Promedio (ms)', fontsize=11, fontweight='bold')
-    ax.set_title('Tiempo vs Variables Condicionadas', fontsize=12, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_xticks(num_cond_vals)
-    
-    # === GRÁFICO 3: Heatmap 2D ===
-    ax = axes[1, 0]
-    unique_interest = sorted(set(results['num_vars_interest']))
-    unique_cond = sorted(set(results['num_vars_cond']))
-    heatmap_data = np.zeros((len(unique_interest), len(unique_cond)))
-    for i in range(len(results['config'])):
-        interest_idx = unique_interest.index(results['num_vars_interest'][i])
-        cond_idx = unique_cond.index(results['num_vars_cond'][i])
-        heatmap_data[interest_idx, cond_idx] = results['avg_time'][i] * 1000
-    
-    im = ax.imshow(heatmap_data, cmap='YlOrRd', aspect='auto')
-    ax.set_xticks(range(len(unique_cond)))
-    ax.set_yticks(range(len(unique_interest)))
-    ax.set_xticklabels(unique_cond)
-    ax.set_yticklabels(unique_interest)
-    ax.set_xlabel('Número de Variables Condicionadas', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Número de Variables de Interés', fontsize=11, fontweight='bold')
-    ax.set_title('Heatmap de Tiempo de Ejecución (ms)', fontsize=12, fontweight='bold')
-    plt.colorbar(im, ax=ax, label='Tiempo (ms)')
-    
-    # === GRÁFICO 4: Distribución de Tiempos ===
-    ax = axes[1, 1]
-    configs_grouped = {}
-    for i in range(len(results['config'])):
-        key = f"I={results['num_vars_interest'][i]},C={results['num_vars_cond'][i]}"
-        if key not in configs_grouped:
-            configs_grouped[key] = []
-        configs_grouped[key].append(results['avg_time'][i] * 1000)
-    
-    labels = list(configs_grouped.keys())[:12]
-    times_list = [configs_grouped[label] for label in labels]
-    bp = ax.boxplot(times_list, labels=labels, patch_artist=True)
-    for patch in bp['boxes']:
-        patch.set_facecolor('#F18F01')
-    ax.set_ylabel('Tiempo (ms)', fontsize=11, fontweight='bold')
-    ax.set_title('Distribución de Tiempos (primeras 12 configs)', fontsize=12, fontweight='bold')
-    ax.tick_params(axis='x', rotation=45)
-    ax.grid(True, alpha=0.3, axis='y')
-    
-    # === GUARDAR Y MOSTRAR ===
-    plt.tight_layout()
-    plt.savefig('/home/usuario/IAA/IAA-P1/timing_results.png', dpi=150, bbox_inches='tight')
-    print("\n📊 Gráfico guardado en: timing_results.png")
-    plt.show()
+
 
 
 def save_results_to_csv(results: dict, number_variables: int) -> None:
@@ -297,9 +186,9 @@ def save_results_to_csv(results: dict, number_variables: int) -> None:
                 results['num_vars_interest'][i],
                 results['num_vars_cond'][i],
                 results['num_vars_other'][i],
-                results['avg_time'][i] * 1000,
-                results['min_time'][i] * 1000,
-                results['max_time'][i] * 1000
+                f"{results['avg_time'][i] * 1000:.4f}",
+                f"{results['min_time'][i] * 1000:.4f}",
+                f"{results['max_time'][i] * 1000:.4f}"
             ])
     print(f"\n📊 Datos de resultados guardados en: {csv_file}")
 
@@ -307,17 +196,17 @@ def save_results_to_csv(results: dict, number_variables: int) -> None:
 def main_timing_analysis() -> None:
     """Función principal para ejecutar el análisis de tiempo."""
     print("\n" + "="*100)
-    print("ANÁLISIS DE TIEMPO DE EJECUCIÓN - prob_cond_bin")
+    print("ANÁLISIS DE TIEMPO DE EJECUCIÓN")
     print("="*100)
     
     # === ENTRADA DE USUARIO ===
     while True:
         try:
             num_vars = int(input("\nNúmero de variables para el análisis (recomendado 8-15): "))
-            if 1 <= num_vars <= 25:
+            if 1 <= num_vars <= 32:
                 break
             else:
-                print("Por favor, ingresa un número entre 1 y 25")
+                print("Por favor, ingresa un número entre 1 y 32")
         except ValueError:
             print("Entrada inválida. Ingresa un número entero.")
     
@@ -329,10 +218,6 @@ def main_timing_analysis() -> None:
     # === GENERAR REPORTES ===
     print_results_table(results)
     save_results_to_csv(results, num_vars)
-    
-    # === VISUALIZACIONES ===
-    print("\n📈 Generando gráficos...")
-    create_visualizations(results, num_vars)
     print("\n✅ Análisis completado exitosamente")
 
 

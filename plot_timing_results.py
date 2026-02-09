@@ -5,6 +5,8 @@ Ejecutar después de haber generado timing_results.csv
 
 import csv
 import numpy as np
+
+# === IMPORTAR MATPLOTLIB (OPCIONAL) ===
 try:
     import matplotlib.pyplot as plt
     MATPLOTLIB_AVAILABLE = True
@@ -17,6 +19,7 @@ except ImportError:
 
 def load_results_from_csv(csv_file: str) -> dict:
     """Carga los resultados desde un archivo CSV."""
+    # === INICIALIZAR ESTRUCTURA DE DATOS ===
     results = {
         'config': [],
         'num_vars_interest': [],
@@ -27,6 +30,7 @@ def load_results_from_csv(csv_file: str) -> dict:
         'max_time': []
     }
     
+    # === LEER CSV ===
     with open(csv_file, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -44,7 +48,7 @@ def load_results_from_csv(csv_file: str) -> dict:
 def create_visualizations(results: dict, number_variables: int) -> None:
     """Crea gráficos para visualizar los resultados."""
     
-    # Agrupar resultados por número de variables de interés
+    # === AGRUPAR POR VARIABLES DE INTERÉS ===
     by_interest = {}
     for i in range(len(results['config'])):
         num_interest = results['num_vars_interest'][i]
@@ -53,7 +57,7 @@ def create_visualizations(results: dict, number_variables: int) -> None:
         by_interest[num_interest]['cond'].append(results['num_vars_cond'][i])
         by_interest[num_interest]['time'].append(results['avg_time'][i])
     
-    # Agrupar resultados por número de variables condicionadas
+    # === AGRUPAR POR VARIABLES CONDICIONADAS ===
     by_cond = {}
     for i in range(len(results['config'])):
         num_cond = results['num_vars_cond'][i]
@@ -62,12 +66,12 @@ def create_visualizations(results: dict, number_variables: int) -> None:
         by_cond[num_cond]['interest'].append(results['num_vars_interest'][i])
         by_cond[num_cond]['time'].append(results['avg_time'][i])
     
-    # Crear figura con múltiples subgráficos
+    # === CREAR FIGURA PRINCIPAL ===
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle(f'Análisis de Tiempo de Ejecución - {number_variables} Variables Totales', 
                  fontsize=14, fontweight='bold')
     
-    # Gráfico 1: Tiempo promedio vs Número de variables de interés
+    # === GRÁFICO 1: Tiempo vs Variables de Interés ===
     ax = axes[0, 0]
     num_interest_vals = sorted(by_interest.keys())
     times_by_interest = [np.mean(by_interest[ni]['time']) for ni in num_interest_vals]
@@ -78,7 +82,7 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.grid(True, alpha=0.3)
     ax.set_xticks(num_interest_vals)
     
-    # Gráfico 2: Tiempo promedio vs Número de variables condicionadas
+    # === GRÁFICO 2: Tiempo vs Variables Condicionadas ===
     ax = axes[0, 1]
     num_cond_vals = sorted(by_cond.keys())
     times_by_cond = [np.mean(by_cond[nc]['time']) for nc in num_cond_vals]
@@ -89,11 +93,10 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.grid(True, alpha=0.3)
     ax.set_xticks(num_cond_vals)
     
-    # Gráfico 3: Heatmap de tiempo vs (Variables de interés, Variables condicionadas)
+    # === GRÁFICO 3: Heatmap 2D ===
     ax = axes[1, 0]
     unique_interest = sorted(set(results['num_vars_interest']))
     unique_cond = sorted(set(results['num_vars_cond']))
-    
     heatmap_data = np.zeros((len(unique_interest), len(unique_cond)))
     for i in range(len(results['config'])):
         interest_idx = unique_interest.index(results['num_vars_interest'][i])
@@ -110,7 +113,7 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.set_title('Heatmap de Tiempo de Ejecución (ms)', fontsize=12, fontweight='bold')
     plt.colorbar(im, ax=ax, label='Tiempo (ms)')
     
-    # Gráfico 4: Distribución de tiempos (box plot)
+    # === GRÁFICO 4: Box Plot ===
     ax = axes[1, 1]
     configs_grouped = {}
     for i in range(len(results['config'])):
@@ -119,9 +122,8 @@ def create_visualizations(results: dict, number_variables: int) -> None:
             configs_grouped[key] = []
         configs_grouped[key].append(results['avg_time'][i])
     
-    labels = list(configs_grouped.keys())[:12]  # Limitar a 12 para legibilidad
+    labels = list(configs_grouped.keys())[:12]
     times_list = [configs_grouped[label] for label in labels]
-    
     bp = ax.boxplot(times_list, labels=labels, patch_artist=True)
     for patch in bp['boxes']:
         patch.set_facecolor('#F18F01')
@@ -130,6 +132,7 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.tick_params(axis='x', rotation=45)
     ax.grid(True, alpha=0.3, axis='y')
     
+    # === GUARDAR Y MOSTRAR ===
     plt.tight_layout()
     plt.savefig('timing_results.png', dpi=150, bbox_inches='tight')
     print("📊 Gráfico guardado en: timing_results.png")
@@ -138,10 +141,15 @@ def create_visualizations(results: dict, number_variables: int) -> None:
 
 if __name__ == "__main__":
     csv_file = 'timing_results.csv'
+    
     try:
+        # === CARGAR DATOS ===
         results = load_results_from_csv(csv_file)
-        # Obtener el número de variables del primer resultado
+        
+        # === CALCULAR NÚMERO DE VARIABLES ===
         num_vars = results['num_vars_interest'][0] + results['num_vars_cond'][0] + results['num_vars_other'][0]
+        
+        # === GENERAR VISUALIZACIONES ===
         create_visualizations(results, num_vars)
         print("\n✅ Gráficos generados exitosamente")
     except FileNotFoundError:

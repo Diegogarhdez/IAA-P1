@@ -25,6 +25,7 @@ except ImportError:
 
 def generate_mask(variables: list[int], number_variables: int) -> int:
     """Convierte una lista de índices de variables (1-indexados) a una máscara."""
+    # Construir máscara binaria con bits establecidos en posiciones de variables
     mask = 0
     for var in variables:
         mask |= 1 << (var - 1)
@@ -46,9 +47,8 @@ def run_timing_analysis(
     Returns:
         Diccionario con los resultados del análisis
     """
-    # Generar distribución aleatoria
+    # === PREPARACIÓN ===
     distribution, _ = generate_random_distribution(number_variables)
-    
     results = {
         'config': [],
         'num_vars_interest': [],
@@ -59,35 +59,29 @@ def run_timing_analysis(
         'max_time': []
     }
     
-    # Iterar sobre diferentes números de variables de interés
+    # === ITERACIÓN SOBRE COMBINACIONES ===
     for num_interest in range(number_variables + 1):
         available_for_cond = number_variables - num_interest
         
-        # Iterar sobre diferentes números de variables condicionadas
         for num_cond in range(available_for_cond + 1):
             num_other = number_variables - num_interest - num_cond
-            
-            # Generar todas las variables (1, 2, ..., number_variables)
             all_vars = list(range(1, number_variables + 1))
             
-            # Generar varias combinaciones para estas cantidades
+            # === GENERAR COMBINACIONES DE VARIABLES DE INTERÉS ===
             num_configs = min(3, 
                             len(list(itertools.combinations(all_vars, num_interest))) if num_interest > 0 else 1)
             
             if num_interest == 0:
-                maskI = 0
-                interest_configs = [maskI]
+                interest_configs = [0]
             else:
                 interest_combos = list(itertools.combinations(all_vars, num_interest))[:num_configs]
                 interest_configs = [generate_mask(combo, number_variables) for combo in interest_combos]
             
             for maskI in interest_configs:
+                # === GENERAR COMBINACIONES DE VARIABLES CONDICIONADAS ===
                 if num_cond == 0:
-                    maskC = 0
-                    valC = 0
-                    cond_configs = [(maskC, valC)]
+                    cond_configs = [(0, 0)]
                 else:
-                    # Obtener variables no usadas para condicionadas
                     used_in_interest = set()
                     for i in range(number_variables):
                         if (maskI >> i) & 1:
@@ -99,11 +93,11 @@ def run_timing_analysis(
                     cond_configs = []
                     for combo in cond_combos:
                         maskC = generate_mask(combo, number_variables)
-                        valC = 0  # Usar valor 0 para todas las variables condicionadas
+                        valC = 0
                         cond_configs.append((maskC, valC))
                 
                 for maskC, valC in cond_configs:
-                    # Medir tiempo
+                    # === MEDIR TIEMPO DE EJECUCIÓN ===
                     times = []
                     for _ in range(num_repetitions):
                         start = time.perf_counter()
@@ -112,11 +106,10 @@ def run_timing_analysis(
                         if result is not None:
                             times.append(end - start)
                     
+                    # === ALMACENAR RESULTADOS ===
                     if times:
                         avg_time = sum(times) / len(times)
-                        results['config'].append(
-                            f"I={num_interest},C={num_cond},O={num_other}"
-                        )
+                        results['config'].append(f"I={num_interest},C={num_cond},O={num_other}")
                         results['num_vars_interest'].append(num_interest)
                         results['num_vars_cond'].append(num_cond)
                         results['num_vars_other'].append(num_other)
@@ -129,17 +122,16 @@ def run_timing_analysis(
 
 def print_results_table(results: dict) -> None:
     """Imprime los resultados en formato de tabla bonita con colores."""
-    # Códigos ANSI para colores
+    # === DEFINICIÓN DE COLORES ANSI ===
     BOLD = '\033[1m'
     RESET = '\033[0m'
     CYAN = '\033[36m'
     MAGENTA = '\033[35m'
     YELLOW = '\033[33m'
     GREEN = '\033[32m'
-    
     total_width = 85
     
-    # Encabezado principal con decoración
+    # === ENCABEZADO ===
     print("\n" + CYAN + "╔" + "═" * (total_width - 2) + "╗" + RESET)
     title = " ANÁLISIS DE TIEMPO DE EJECUCIÓN - prob_cond_bin "
     padding = (total_width - len(title)) // 2
@@ -148,13 +140,13 @@ def print_results_table(results: dict) -> None:
           " " * (total_width - len(title) - padding - 1) + CYAN + "║" + RESET)
     print(CYAN + "╠" + "═" * (total_width - 2) + "╣" + RESET)
     
-    # Encabezados de columnas
+    # === COLUMNAS ===
     headers = f"{'Config':<12} {'I':<3} {'C':<3} {'O':<3} {'Prom (ms)':<15} {'Mín':<10} {'Máx':<10}"
     print(CYAN + "║" + RESET + f" {BOLD + MAGENTA}{headers}{RESET}" + 
           " " * (total_width - len(headers) - 3) + CYAN + "║" + RESET)
     print(CYAN + "╠" + "═" * (total_width - 2) + "╣" + RESET)
     
-    # Datos
+    # === DATOS ===
     for i in range(len(results['config'])):
         config = results['config'][i]
         num_interest = results['num_vars_interest'][i]
@@ -164,7 +156,7 @@ def print_results_table(results: dict) -> None:
         min_time_ms = results['min_time'][i] * 1000
         max_time_ms = results['max_time'][i] * 1000
         
-        # Colorear basado en el tiempo
+        # Asignar color y símbolo según velocidad de ejecución
         if avg_time_ms < 0.02:
             time_color = GREEN
             symbol = "▼"
@@ -179,16 +171,10 @@ def print_results_table(results: dict) -> None:
         print(CYAN + "║" + RESET + f" {row}" + 
               " " * (total_width - len(row) - 5) + CYAN + "║" + RESET)
     
-    # Pie de tabla
+    # === PIE CON ESTADÍSTICAS ===
     print(CYAN + "╠" + "═" * (total_width - 2) + "╣" + RESET)
-    
-    # Estadísticas
     times_ms = [t * 1000 for t in results['avg_time']]
-    min_time = min(times_ms)
-    max_time = max(times_ms)
-    avg_time = sum(times_ms) / len(times_ms)
-    
-    stats_line = f"Min: {min_time:.6f} | Max: {max_time:.6f} | Prom: {avg_time:.6f} | Total: {len(results['config'])}"
+    stats_line = f"Min: {min(times_ms):.6f} | Max: {max(times_ms):.6f} | Prom: {sum(times_ms)/len(times_ms):.6f} | Total: {len(results['config'])}"
     print(CYAN + "║ " + RESET + f"{GREEN}{BOLD}{stats_line}{RESET}" + 
           " " * (total_width - len(stats_line) - 4) + CYAN + "║" + RESET)
     print(CYAN + "╚" + "═" * (total_width - 2) + "╝" + RESET + "\n")
@@ -197,6 +183,7 @@ def print_results_table(results: dict) -> None:
 def create_visualizations(results: dict, number_variables: int) -> None:
     """Crea gráficos para visualizar los resultados."""
     
+    # === VERIFICAR DEPENDENCIAS ===
     if not MATPLOTLIB_AVAILABLE:
         print("\n⚠️  matplotlib no está disponible. Saltando visualización gráfica.")
         print("Para generar gráficos, instala matplotlib: pip install matplotlib")
@@ -207,30 +194,27 @@ def create_visualizations(results: dict, number_variables: int) -> None:
         print("Para generar gráficos, instala numpy: pip install numpy")
         return
     
-    # Agrupar resultados por número de variables de interés
+    # === AGRUPAR DATOS ===
     by_interest = {}
     for i in range(len(results['config'])):
         num_interest = results['num_vars_interest'][i]
         if num_interest not in by_interest:
-            by_interest[num_interest] = {'cond': [], 'time': [], 'time_other': []}
-        by_interest[num_interest]['cond'].append(results['num_vars_cond'][i])
-        by_interest[num_interest]['time'].append(results['avg_time'][i] * 1000)  # Convertir a ms
+            by_interest[num_interest] = {'cond': [], 'time': []}
+        by_interest[num_interest]['time'].append(results['avg_time'][i] * 1000)
     
-    # Agrupar resultados por número de variables condicionadas
     by_cond = {}
     for i in range(len(results['config'])):
         num_cond = results['num_vars_cond'][i]
         if num_cond not in by_cond:
             by_cond[num_cond] = {'interest': [], 'time': []}
-        by_cond[num_cond]['interest'].append(results['num_vars_interest'][i])
-        by_cond[num_cond]['time'].append(results['avg_time'][i] * 1000)  # Convertir a ms
+        by_cond[num_cond]['time'].append(results['avg_time'][i] * 1000)
     
-    # Crear figura con múltiples subgráficos
+    # === CREAR FIGURA ===
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle(f'Análisis de Tiempo de Ejecución - {number_variables} Variables Totales', 
                  fontsize=14, fontweight='bold')
     
-    # Gráfico 1: Tiempo promedio vs Número de variables de interés
+    # === GRÁFICO 1: Tiempo vs Variables de Interés ===
     ax = axes[0, 0]
     num_interest_vals = sorted(by_interest.keys())
     times_by_interest = [np.mean(by_interest[ni]['time']) for ni in num_interest_vals]
@@ -241,7 +225,7 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.grid(True, alpha=0.3)
     ax.set_xticks(num_interest_vals)
     
-    # Gráfico 2: Tiempo promedio vs Número de variables condicionadas
+    # === GRÁFICO 2: Tiempo vs Variables Condicionadas ===
     ax = axes[0, 1]
     num_cond_vals = sorted(by_cond.keys())
     times_by_cond = [np.mean(by_cond[nc]['time']) for nc in num_cond_vals]
@@ -252,11 +236,10 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.grid(True, alpha=0.3)
     ax.set_xticks(num_cond_vals)
     
-    # Gráfico 3: Heatmap de tiempo vs (Variables de interés, Variables condicionadas)
+    # === GRÁFICO 3: Heatmap 2D ===
     ax = axes[1, 0]
     unique_interest = sorted(set(results['num_vars_interest']))
     unique_cond = sorted(set(results['num_vars_cond']))
-    
     heatmap_data = np.zeros((len(unique_interest), len(unique_cond)))
     for i in range(len(results['config'])):
         interest_idx = unique_interest.index(results['num_vars_interest'][i])
@@ -273,7 +256,7 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.set_title('Heatmap de Tiempo de Ejecución (ms)', fontsize=12, fontweight='bold')
     plt.colorbar(im, ax=ax, label='Tiempo (ms)')
     
-    # Gráfico 4: Distribución de tiempos (box plot)
+    # === GRÁFICO 4: Distribución de Tiempos ===
     ax = axes[1, 1]
     configs_grouped = {}
     for i in range(len(results['config'])):
@@ -282,9 +265,8 @@ def create_visualizations(results: dict, number_variables: int) -> None:
             configs_grouped[key] = []
         configs_grouped[key].append(results['avg_time'][i] * 1000)
     
-    labels = list(configs_grouped.keys())[:12]  # Limitar a 12 para legibilidad
+    labels = list(configs_grouped.keys())[:12]
     times_list = [configs_grouped[label] for label in labels]
-    
     bp = ax.boxplot(times_list, labels=labels, patch_artist=True)
     for patch in bp['boxes']:
         patch.set_facecolor('#F18F01')
@@ -293,6 +275,7 @@ def create_visualizations(results: dict, number_variables: int) -> None:
     ax.tick_params(axis='x', rotation=45)
     ax.grid(True, alpha=0.3, axis='y')
     
+    # === GUARDAR Y MOSTRAR ===
     plt.tight_layout()
     plt.savefig('/home/usuario/IAA/IAA-P1/timing_results.png', dpi=150, bbox_inches='tight')
     print("\n📊 Gráfico guardado en: timing_results.png")
@@ -302,6 +285,8 @@ def create_visualizations(results: dict, number_variables: int) -> None:
 def save_results_to_csv(results: dict, number_variables: int) -> None:
     """Guarda los resultados en un archivo CSV para análisis posterior."""
     csv_file = '/home/usuario/IAA/IAA-P1/timing_results.csv'
+    
+    # === ESCRIBIR CSV ===
     with open(csv_file, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['Config', 'Variables_Interes', 'Variables_Condicionadas', 
@@ -325,6 +310,7 @@ def main_timing_analysis() -> None:
     print("ANÁLISIS DE TIEMPO DE EJECUCIÓN - prob_cond_bin")
     print("="*100)
     
+    # === ENTRADA DE USUARIO ===
     while True:
         try:
             num_vars = int(input("\nNúmero de variables para el análisis (recomendado 8-15): "))
@@ -335,21 +321,18 @@ def main_timing_analysis() -> None:
         except ValueError:
             print("Entrada inválida. Ingresa un número entero.")
     
+    # === EJECUTAR ANÁLISIS ===
     print(f"\n⏳ Ejecutando análisis para {num_vars} variables...")
     print("(Esto puede tomar unos segundos...)\n")
-    
     results = run_timing_analysis(num_vars, num_repetitions=3)
     
-    # Mostrar tabla de resultados
+    # === GENERAR REPORTES ===
     print_results_table(results)
-    
-    # Guardar resultados en CSV
     save_results_to_csv(results, num_vars)
     
-    # Crear visualizaciones
+    # === VISUALIZACIONES ===
     print("\n📈 Generando gráficos...")
     create_visualizations(results, num_vars)
-    
     print("\n✅ Análisis completado exitosamente")
 
 

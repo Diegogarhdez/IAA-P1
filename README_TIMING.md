@@ -1,4 +1,4 @@
-# Análisis de Tiempo de Ejecución - prob_cond_bin
+# Análisis de Tiempo de Ejecución
 
 Este documento describe cómo usar el módulo de análisis de tiempo para estudiar el comportamiento de la función `prob_cond_bin`.
 

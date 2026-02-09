@@ -7,4 +7,5 @@
    * Generar la distribución aleatoria
    * Hacer comprobaciones de que se cumples condiciones en el código
    * Solicitar maskC, maskI y valC al usuario y procesarlos
+* Implemtación ente la primera y la segunda sesión (trabajo autonomo)
    * 

@@ -19,12 +19,11 @@ python3 timing_analyzer.py
 ```
 
 El script te pedirá:
-- **Número de variables**: El número total de variables (recomendado 8-15 para un análisis rápido)
+- **Número de variables**: El número total de variables
 
 El análisis ejecutará múltiples configuraciones automáticamente y generará:
 - **Tabla con resultados**: Mostrada en la consola
 - **Archivo CSV**: `timing_results.csv` con todos los datos tabulares
-- **Gráficos** (si matplotlib está disponible): `timing_results.png` con visualizaciones
 
 ### Opción 2: Desde el menú principal
 
@@ -52,11 +51,11 @@ La salida mostrará una tabla con el siguiente formato:
 ======================================================================================================
 ANÁLISIS DE TIEMPO DE EJECUCIÓN - prob_cond_bin
 ======================================================================================================
-Config          Variables                      Tiempo Promedio      Rango       
-                I / C / Otros                  (ms)                 (ms)        
+Config          Variables                     Tiempo Promedio    Tiempo mínimo Tiempo máximo       
+                I / C / Otros                  (ms)                 (ms)           (ms)
 ------------------------------------------------------------------------------------------------------
-I=0,C=0,O=8     0 / 0 / 8                           0.154705      0.1393 - 0.1682
-I=0,C=1,O=7     0 / 1 / 7                           0.075208      0.0745 - 0.0759
+I=0,C=0,O=8     0 / 0 / 8                           0.154705      0.1393          0.1682
+I=0,C=1,O=7     0 / 1 / 7                           0.075208      0.0745          0.0759
 ...
 ```
 
@@ -64,7 +63,8 @@ Donde:
 - **Config**: Configuración (I=variables interés, C=variables condicionadas, O=variables otras)
 - **I / C / Otros**: Desglose de variables
 - **Tiempo Promedio**: Tiempo medio de ejecución en milisegundos
-- **Rango**: Mínimo y máximo entre repeticiones
+- **Tiempo mínimo**: Tiempo mínimo entre repeticiones
+- **Tiempo máximo**: Tiempo máximo entre repeticiones
 
 ### Archivo CSV
 
@@ -76,42 +76,7 @@ Config,Variables_Interes,Variables_Condicionadas,Variables_Otras,Tiempo_Promedio
 
 Puedes abrir este archivo en Excel, Google Sheets o cualquier herramienta de análisis de datos.
 
-### Gráficos
-
-Si matplotlib está instalado, se generará un archivo `timing_results.png` con 4 gráficos:
-
-1. **Gráfico 1**: Tiempo vs Número de Variables de Interés
-   - Muestra cómo aumenta el tiempo según crece el número de variables de interés
-
-2. **Gráfico 2**: Tiempo vs Número de Variables Condicionadas  
-   - Muestra cómo varía el tiempo con el número de variables condicionadas
-
-3. **Gráfico 3**: Heatmap de Tiempo de Ejecución
-   - Mapa de calor bidimensional mostrando el tiempo para cada combinación
-   - Eje X: Variables Condicionadas
-   - Eje Y: Variables de Interés
-   - Color más oscuro = tiempo más largo
-
-4. **Gráfico 4**: Distribución de Tiempos
-   - Box plot mostrando la variação de tiempos para diferentes configuraciones
-
-## Instalación de Dependencias (Opcional)
-
-### Para gráficos
-
-Si deseas generar los gráficos PNG, instala matplotlib y numpy:
-
-```bash
-pip3 install matplotlib numpy
-```
-
-O en sistemas con restricciones:
-
-```bash
-apt-get install python3-matplotlib python3-numpy
-```
-
-### Sin gráficos
+### Resultados
 
 El análisis funciona perfectamente sin matplotlib. Generará:
 - Tabla de resultados en la consola
@@ -150,7 +115,6 @@ Para un análisis más completo (puede tomar más tiempo).
 ## Archivos Generados
 
 - `timing_results.csv` - Datos tabulares en formato CSV
-- `timing_results.png` - Gráficos PNG (si matplotlib está disponible)
 
 ## Notas
 

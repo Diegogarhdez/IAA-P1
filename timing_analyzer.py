@@ -132,7 +132,6 @@ def print_results_table(results: dict) -> None:
     RESET = "\033[0m"
     CYAN = "\033[36m"
     MAGENTA = "\033[35m"
-    YELLOW = "\033[33m"
     GREEN = "\033[32m"
     total_width = 85
 
@@ -148,7 +147,7 @@ def print_results_table(results: dict) -> None:
         + BOLD
         + title
         + RESET
-        + " " * (total_width - len(title) - padding - 1)
+        + " " * (total_width - len(title) - padding - 2)
         + CYAN
         + "║"
         + RESET
@@ -179,26 +178,15 @@ def print_results_table(results: dict) -> None:
         min_time_ms = results["min_time"][i] * 1000
         max_time_ms = results["max_time"][i] * 1000
 
-        # Asignar color y símbolo según velocidad de ejecución
-        if avg_time_ms < 0.02:
-            time_color = GREEN
-            symbol = "▼"
-        elif avg_time_ms < 0.1:
-            time_color = YELLOW
-            symbol = "▬"
-        else:
-            time_color = MAGENTA
-            symbol = "▲"
-
-        row = f"{config:<12} {num_interest:<3} {num_cond:<3} {num_other:<3} {time_color}{avg_time_ms:>9.4f}{RESET}  {min_time_ms:>6.4f}  {max_time_ms:>6.4f} {symbol}"
+        row = f"{config:<12} {num_interest:<3} {num_cond:<3} {num_other:<3} {avg_time_ms:>9.4f}{RESET}  {min_time_ms:>6.4f}  {max_time_ms:>6.4f}"
         print(
             CYAN
             + "║"
             + RESET
             + f" {row}"
-            + " " * (total_width - len(row) - 5)
+            + " " * (total_width - len(row))
             + CYAN
-            + "║"
+            + " ║"
             + RESET
         )
 
@@ -213,7 +201,7 @@ def print_results_table(results: dict) -> None:
         + f"{GREEN}{BOLD}{stats_line}{RESET}"
         + " " * (total_width - len(stats_line) - 4)
         + CYAN
-        + "║"
+        + " ║"
         + RESET
     )
     print(CYAN + "╚" + "═" * (total_width - 2) + "╝" + RESET + "\n")
